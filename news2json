@@ -92,9 +92,6 @@ use Digest::SHA;
 use Crypt::OpenSSL::RSA;
 use MIME::Base64;
 
-# Declare the subroutines
-sub trim($);
-
 # globals
 
 
@@ -119,10 +116,7 @@ my $article_string = '';
 # LWP crée un agent et une requête
 my $ua  = LWP::UserAgent->new( agent => $USER_AGENT);
 
-my $conf_file = $INN::Config::newsetc.'/news2json.cf';
-# SSL Keys
-my $pubkey = read_file($INN::Config::newsetc.'/ssl/jntp.cert');
-my $privkey = read_file($INN::Config::newsetc.'/ssl/jntp.key');
+
 
 # Set logging
 my $debug = 0;
@@ -194,9 +188,7 @@ POST: while (<STDIN>) {
 		## --------
 		#%article = n2j($article_string);
 		#(%article, %data) = n2j($article_string);
-		
-		
-		
+
 		my %jsonPropose;
 		$domain{$jntp_server} ||= $FROM_DOMAIN;
 		#my $json_data = JSON->new->utf8->canonical(1)->encode(\%data);
@@ -222,15 +214,6 @@ my $jsonPropose = <<"EOF";
 ]
 EOF
 	
-		
-		 $jsonPropose=~ s/\s*//g;
-		 $jsonPropose=~ s/,/, /g;
-		 $jsonPropose=~ s/:/: /g;
-		 $jsonPropose=~ s/{/{ /g;
-	 	 $jsonPropose=~ s/}/ }/g;
-		 $jsonPropose=~ s/\[/\[ /g;
-		 $jsonPropose=~ s/\]/ \]/g;
-		
 		##dev uniquement sinon log trop bavard
 		logmsg ( "$jntp_server > $jsonPropose", 'info');
 		
@@ -258,16 +241,6 @@ my $jsonSend = <<"EOF";
 			]
 
 EOF
-	
-	
-		 $jsonSend=~ s/\s*//g;
-		 $jsonSend=~ s/,/, /g;
-		 $jsonSend=~ s/:/: /g;
-		 $jsonSend=~ s/{/{ /g;
-	 	 $jsonSend=~ s/}/ }/g;
-		 $jsonSend=~ s/\[/\[ /g;
-		 $jsonSend=~ s/\]/ \]/g;
-		
 
 		$jsonSend = decode_json($jsonSend);
 		$jsonSend->[1]{'Data'}{'Body'} = getArticle();
@@ -288,20 +261,6 @@ EOF
 logmsg('closed', 'info');
 closelog() if $use_syslog;
 exit 0;
- 
-
- 
- 
-# InjectionDate
-sub httpdate {
-    my ($date) = @_;
-    my $dt = DateTime::Format::HTTP->parse_datetime($date);
-    $dt = $dt->clone()->set_time_zone('UTC');
-    return undef if ($dt > DateTime->now());
-    $dt = $dt->strftime("%FT%TZ");
-
-    return $dt;
-}
 
 # Read file by lines and return string.
 sub read_file {
@@ -322,7 +281,6 @@ sub execJNTP {
 	$req->header('content-type' => 'application/json');
 	$req->content($_[1]);
 	my $response = LWP::UserAgent->new( agent => $USER_AGENT)->request($req)->content;
-	print $response."\n";
 	return decode_json($response);
 }
 
@@ -377,16 +335,6 @@ sub logdie {
     logmsg($msg, $lvl || 'err');
     closelog() if $use_syslog;
     exit 1;
-}
-
-
-# Perl trim functon to remove whitespace from the start and end of the string
-sub trim($)
-{
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
 }
 
 ## -------
